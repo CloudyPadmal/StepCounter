@@ -1,0 +1,14 @@
+<resources>
+    <string name="app_name">StepCounter</string>
+    <string name="action_settings">Settings</string>
+    <string name="na">N/A</string>
+    <string name="dir">DIR</string>
+    <string name="steps">Steps</string>
+    <string name="post">POST!</string>
+    <string name="ox">Ox</string>
+    <string name="oy">Oy</string>
+
+    <!-- AdMob ad unit IDs -->
+    <string name="banner_home_footer">ca-app-pub-9799098887169943/5752242256</string>
+
+</resources>
