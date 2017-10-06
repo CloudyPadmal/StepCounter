@@ -22,16 +22,6 @@
         android:padding="5dp">
 
         <TextView
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="0.5"
-            android:fontFamily="monospace"
-            android:gravity="center"
-            android:padding="3dp"
-            android:text="@string/dir"
-            android:textSize="13sp" />
-
-        <TextView
             android:id="@+id/direction"
             android:layout_width="0dp"
             android:layout_height="match_parent"
@@ -60,7 +50,7 @@
             android:gravity="center"
             android:padding="3dp"
             android:text="WiFi"
-            android:textSize="13sp" />
+            android:textSize="12sp" />
 
         <TextView
             android:id="@+id/imu_stat"
@@ -72,7 +62,7 @@
             android:gravity="center"
             android:padding="3dp"
             android:text="IMU"
-            android:textSize="13sp" />
+            android:textSize="12sp" />
 
         <TextView
             android:id="@+id/step_stat"
@@ -84,7 +74,19 @@
             android:gravity="center"
             android:padding="3dp"
             android:text="Steps"
-            android:textSize="13sp" />
+            android:textSize="12sp" />
+
+        <TextView
+            android:id="@+id/cell_stat"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_margin="1dp"
+            android:layout_weight="1"
+            android:fontFamily="monospace"
+            android:gravity="center"
+            android:padding="3dp"
+            android:text="Cell"
+            android:textSize="12sp" />
 
     </LinearLayout>
 
@@ -121,6 +123,7 @@
             android:layout_weight="1"
             android:fontFamily="monospace"
             android:gravity="center"
+            android:text="@string/na"
             android:padding="3dp"
             android:textSize="13sp" />
 

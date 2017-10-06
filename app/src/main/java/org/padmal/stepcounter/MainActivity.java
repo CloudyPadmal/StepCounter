@@ -13,7 +13,9 @@ import android.os.Bundle;
 import android.provider.Settings;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.telephony.NeighboringCellInfo;
 import android.telephony.TelephonyManager;
+import android.telephony.gsm.GsmCellLocation;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -36,7 +38,9 @@ import com.google.android.gms.ads.AdView;
 import com.vistrav.ask.Ask;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -50,6 +54,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private final String STEP_URL = "http://202.94.70.33/server_testing/insertIRPSMobileHeadingPlusSteps.php";
     private final String WIFI_URL = "http://202.94.70.33/tango/insert_tango_wifi_scan.php";
     private final String IMU_URL = "http://202.94.70.33/tango/insert_tango_raw_imu.php";
+    private final String CELL_URL = "http://202.94.70.33/tango/insert_tango_cell_tower_scan.php";
 
     private TextView stepStat, mSteps, mDirection, mThreshold;
     private Button runStop;
@@ -63,6 +68,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private DefaultRetryPolicy retryPolicy;
     private RequestQueue queue;
 
+    private Logger logger;
+
     private ImageView compass;
 
     private float[] OriReading;
@@ -73,7 +80,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     private List<ScanResult> scanResults;
 
-    private int wifiCount = 0, imuCount = 0, stepCount = 0, steps = 0;
+    private int wifiCount = 0, imuCount = 0, stepCount = 0, cellCount, steps = 0;
     private float heading = 0.0f;
     private int count = 0;
     private int NodeCount = 0;
@@ -85,9 +92,11 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private String IMEI;
 
     private TextView oriX, oriY, oriZ, accX, accY, accZ, gyrX, gyrY, gyrZ, magX, magY, magZ;
-    private TextView wifiStat, imuStat, mNodes, startTime, endTime;
+    private TextView wifiStat, imuStat, cellStat, mNodes, startTime, endTime;
 
     private AdView mAdView;
+
+    private TelephonyManager tm;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -100,6 +109,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 Manifest.permission.CHANGE_WIFI_STATE).go();
 
         IMEI = getUniqueID();
+
+        logger = new Logger(getApplicationContext());
 
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -126,14 +137,13 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     }
 
     public String getUniqueID(){
-        String myAndroidDeviceId = "";
-        TelephonyManager mTelephony = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
-        if (mTelephony.getDeviceId() != null){
-            myAndroidDeviceId = mTelephony.getDeviceId();
+        String myAndroidDeviceId;
+        tm = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
+        if (tm.getDeviceId() != null){
+            myAndroidDeviceId = tm.getDeviceId();
         }else{
             myAndroidDeviceId = Settings.Secure.getString(getApplicationContext().getContentResolver(), Settings.Secure.ANDROID_ID);
         }
-        Log.d("Padmal", myAndroidDeviceId);
         return myAndroidDeviceId;
     }
 
@@ -149,6 +159,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             count++;
             postIMUData();
             postStepData();
+            postCellData();
         }
     }
 
@@ -242,6 +253,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         mThreshold.setText(String.valueOf((int) StepDetector.STEP_THRESHOLD));
         mSteps = (TextView) findViewById(R.id.step_count_textview);
         stepStat = (TextView) findViewById(R.id.step_stat);
+        cellStat = (TextView) findViewById(R.id.cell_stat);
     }
 
     /**
@@ -477,6 +489,77 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                         // Magnetic ****************************************************************
                         String Magenetic = Arrays.toString(MagReading).replaceAll("\\s", "");
                         body.put("magnetic_field", Magenetic.substring(1, Magenetic.length() - 1));
+                        return body;
+                    } catch (Exception e) {
+                        return null;
+                    }
+                }
+            };
+            stringRequest.setRetryPolicy(retryPolicy);
+            queue.add(stringRequest);
+        } catch (Exception e) {
+            /**/
+        }
+    }
+
+    private void postCellData() {
+        try {
+            StringRequest stringRequest = new StringRequest(Request.Method.POST, CELL_URL, new Response.Listener<String>() {
+                @Override
+                public void onResponse(String response) {
+                    boolean success = response.contains("Data successfully created");
+                    String displayText = (success) ? "CS " + cellCount : "CF " + cellCount;
+                    if (success) {
+                        cellCount++;
+                    }
+                    cellStat.setText(displayText);
+                    cellStat.setBackgroundColor(displayText.contains("S") ? Color.GREEN : Color.RED);
+                }
+            }, new Response.ErrorListener() {
+                @Override
+                public void onErrorResponse(VolleyError error) {
+                    /**/
+                }
+            }
+
+            ) {
+                @Override
+                protected Map<String, String> getParams() throws AuthFailureError {
+                    Map<String, String> body = new HashMap<>();
+                    try {
+                        // User ID *****************************************************************
+                        body.put("user_id", IMEI);
+                        // Pose Data ***************************************************************
+                        //String uniPose = Arrays.toString(completePose).replaceAll("\\s", "");
+                        //body.put("pose", uniPose.substring(1, uniPose.length() - 1));
+                        body.put("pose", "0.12345,0.12345,0.12345,0.12345,0.12345,0.12345,0.12345,0.12345,0.12345,0.12345,0.12345,0.12345,0.12345");
+                        // Tango Time **************************************************************
+                        body.put("tango_time", String.valueOf(System.currentTimeMillis()));
+                        // Cell Scan *************************************************************
+                        HashMap<Integer, Integer> cellIDwithPSC = logger.getCellIDs();
+                        String postString = "";
+                        GsmCellLocation location = (GsmCellLocation) tm.getCellLocation();
+
+                        final int cid = location.getCid();
+                        final int lac = location.getLac();
+
+                        final String networkOperator = tm.getNetworkOperator();
+                        final int mcc = Integer.parseInt(networkOperator.substring(0, 3));
+                        final int mnc = Integer.parseInt(networkOperator.substring(3));
+                        int psc = location.getPsc();
+
+                        // Update local store of PSCs with Cell IDs if a new CID is encountered
+                        if (!cellIDwithPSC.containsKey(psc)) {
+                            logger.setCellIDs(String.valueOf(psc) + "," + String.valueOf(cid));
+                        }
+
+                        for (NeighboringCellInfo i : tm.getNeighboringCellInfo()) {
+                            if (cellIDwithPSC.containsKey(i.getPsc())) {
+                                postString = postString + cellIDwithPSC.get(i.getPsc()) + "," + i.getRssi() + ",";
+                            }
+                        }
+                        Log.d("Padmal", "Builder - > " + postString);
+                        body.put("cell_tower_scan", postString);
                         return body;
                     } catch (Exception e) {
                         return null;
