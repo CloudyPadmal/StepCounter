@@ -13,6 +13,7 @@ import android.os.Bundle;
 import android.provider.Settings;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.telephony.CellInfo;
 import android.telephony.NeighboringCellInfo;
 import android.telephony.TelephonyManager;
 import android.telephony.gsm.GsmCellLocation;
@@ -21,6 +22,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -51,10 +53,11 @@ import java.util.TimerTask;
 public class MainActivity extends AppCompatActivity implements SensorEventListener, StepListener {
 
 
-    private final String STEP_URL = "http://202.94.70.33/server_testing/insertIRPSMobileHeadingPlusSteps.php";
-    private final String WIFI_URL = "http://202.94.70.33/tango/insert_tango_wifi_scan.php";
-    private final String IMU_URL = "http://202.94.70.33/tango/insert_tango_raw_imu.php";
-    private final String CELL_URL = "http://202.94.70.33/tango/insert_tango_cell_tower_scan.php";
+    //private final String STEP_URL = "http://202.94.70.33/server_testing/insertIRPSMobileHeadingPlusSteps.php";
+    private String STEP_URL = "";
+    private String WIFI_URL = "";
+    private String IMU_URL = "";
+    private String CELL_URL = "";
 
     private TextView stepStat, mSteps, mDirection, mThreshold;
     private Button runStop;
@@ -93,6 +96,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     private TextView oriX, oriY, oriZ, accX, accY, accZ, gyrX, gyrY, gyrZ, magX, magY, magZ;
     private TextView wifiStat, imuStat, cellStat, mNodes, startTime, endTime;
+    private EditText ipAddress;
 
     private AdView mAdView;
 
@@ -207,6 +211,14 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         runStop.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                String ip = ipAddress.getText().toString();
+                if (ip.equals("")) {
+                    ip = "202.94.70.33";
+                }
+                CELL_URL = "http://" + ip + "/tango/insert_tango_cell_tower_scan.php";
+                IMU_URL = "http://" + ip + "/tango/insert_tango_raw_imu.php";
+                WIFI_URL = "http://" + ip + "/tango/insert_tango_wifi_scan.php";
+                STEP_URL = "http://" + ip + "/server_testing/insertIRPSMobileHeadingPlusStepsWithTime.php";
                 SimpleDateFormat sdf = new SimpleDateFormat("hh:mm:ss");
                 String now = sdf.format(new Date());
                 if (started) {
@@ -254,6 +266,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         mSteps = (TextView) findViewById(R.id.step_count_textview);
         stepStat = (TextView) findViewById(R.id.step_stat);
         cellStat = (TextView) findViewById(R.id.cell_stat);
+
+        ipAddress = (EditText) findViewById(R.id.tv_ip_address);
     }
 
     /**
@@ -270,7 +284,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     }
 
     private void postStepData() {
-        String data = ("?data=100," + IMEI + "," + stepCount + "," + (String.valueOf(heading)));
+        String data = ("?data=100," + IMEI + "," + System.currentTimeMillis() + "," + stepCount + "," + (String.valueOf(heading)));
         try {
             StringRequest stringRequest = new StringRequest(Request.Method.GET, STEP_URL + data, new Response.Listener<String>() {
                 @Override
@@ -355,9 +369,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                         if (state) {
                             wifiCount = 0;
                             imuCount = 0;
-                            body.put("pose", "0.12345,0.12345,0.12345,0.12345,0.12345,0.12345,0.12345,0.12345,0.12345,0.12345,0.12345,0.12345,0.12345");
+                            body.put("pose", "1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1");
                         } else {
-                            body.put("pose", "0.54321,0.54321,0.54321,0.54321,0.54321,0.54321,0.54321,0.54321,0.54321,0.54321,0.54321,0.54321,0.54321");
+                            body.put("pose", "2.2,2.2,2.2,2.2,2.2,2.2,2.2,2.2,2.2,2.2,2.2,2.2,2.2");
                         }
                         // Tango Time **************************************************************
                         body.put("tango_time", String.valueOf(System.currentTimeMillis()));
@@ -408,7 +422,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                         // Pose Data ***************************************************************
                         //String uniPose = Arrays.toString(completePose).replaceAll("\\s", "");
                         //body.put("pose", uniPose.substring(1, uniPose.length() - 1));
-                        body.put("pose", "0.12345,0.12345,0.12345,0.12345,0.12345,0.12345,0.12345,0.12345,0.12345,0.12345,0.12345,0.12345,0.12345");
+                        body.put("pose", "0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0");
                         // Tango Time **************************************************************
                         body.put("tango_time", String.valueOf(System.currentTimeMillis()));
                         // Point Cloud *************************************************************
@@ -448,7 +462,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             StringRequest stringRequest = new StringRequest(Request.Method.POST, IMU_URL, new Response.Listener<String>() {
                 @Override
                 public void onResponse(String response) {
-                    Log.d("Padmal", response);
                     boolean success = response.contains("Data successfully created");
                     String displayText = (success) ? "IS " + imuCount : "IF " + imuCount;
                     if (success) {
@@ -474,7 +487,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                         // Pose Data ***************************************************************
                         //String uniPose = Arrays.toString(completePose).replaceAll("\\s", "");
                         //body.put("pose", uniPose.substring(1, uniPose.length() - 1));
-                        body.put("pose", "0.12345,0.12345,0.12345,0.12345,0.12345,0.12345,0.12345,0.12345,0.12345,0.12345,0.12345,0.12345,0.12345");
+                        body.put("pose", "0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0");
                         // Tango Time **************************************************************
                         body.put("tango_time", String.valueOf(System.currentTimeMillis()));
                         // Orientation *************************************************************
@@ -532,34 +545,53 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                         // Pose Data ***************************************************************
                         //String uniPose = Arrays.toString(completePose).replaceAll("\\s", "");
                         //body.put("pose", uniPose.substring(1, uniPose.length() - 1));
-                        body.put("pose", "0.12345,0.12345,0.12345,0.12345,0.12345,0.12345,0.12345,0.12345,0.12345,0.12345,0.12345,0.12345,0.12345");
+                        body.put("pose", "0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0");
                         // Tango Time **************************************************************
                         body.put("tango_time", String.valueOf(System.currentTimeMillis()));
                         // Cell Scan *************************************************************
-                        HashMap<Integer, Integer> cellIDwithPSC = logger.getCellIDs();
-                        String postString = "";
-                        GsmCellLocation location = (GsmCellLocation) tm.getCellLocation();
+                        try {
+                            StringBuilder cellString = new StringBuilder();
+                            HashMap<String, String> cellIDwithPSC = logger.getCellIDs();
+                            GsmCellLocation location = (GsmCellLocation) tm.getCellLocation();
 
-                        final int cid = location.getCid();
-                        final int lac = location.getLac();
+                            final int cid = location.getCid();
+                            final int lac = location.getLac();
 
-                        final String networkOperator = tm.getNetworkOperator();
-                        final int mcc = Integer.parseInt(networkOperator.substring(0, 3));
-                        final int mnc = Integer.parseInt(networkOperator.substring(3));
-                        int psc = location.getPsc();
+                            final String networkOperator = tm.getNetworkOperator();
+                            final int mcc = Integer.parseInt(networkOperator.substring(0, 3));
+                            final int mnc = Integer.parseInt(networkOperator.substring(3));
+                            int psc = Math.abs(location.getPsc());
 
-                        // Update local store of PSCs with Cell IDs if a new CID is encountered
-                        if (!cellIDwithPSC.containsKey(psc)) {
-                            logger.setCellIDs(String.valueOf(psc) + "," + String.valueOf(cid));
-                        }
-
-                        for (NeighboringCellInfo i : tm.getNeighboringCellInfo()) {
-                            if (cellIDwithPSC.containsKey(i.getPsc())) {
-                                postString = postString + cellIDwithPSC.get(i.getPsc()) + "," + i.getRssi() + ",";
+                            // Update local store of PSCs with Cell IDs if a new CID is encountered
+                            if (!cellIDwithPSC.containsKey(String.valueOf(psc))) {
+                                logger.setCellIDs(String.valueOf(psc) + "," + String.valueOf(cid));
                             }
+                            List<NeighboringCellInfo> list = tm.getNeighboringCellInfo();
+
+                            if (list.size() > 0) {
+                                cellString.append(list.size()).append(",").append(lac).append(",").append(mcc).append(",").append(mnc).append(",");
+                                for (NeighboringCellInfo i : list) {
+                                    if (cellIDwithPSC.containsKey(String.valueOf(Math.abs(i.getPsc())))) {
+                                        cellString.append(cellIDwithPSC.get(String.valueOf(i.getPsc())))
+                                                .append(",").append(i.getPsc()).append(",")
+                                                .append(i.getRssi()).append(",");
+                                    } else {
+                                        cellString.append(-1)
+                                                .append(",").append(i.getPsc()).append(",")
+                                                .append(i.getRssi()).append(",");
+                                    }
+                                }
+                                if (cellString.length() > 3) {
+                                    cellString.deleteCharAt(cellString.length() - 1);
+                                }
+                                Log.d("Padmal", cellString.toString());
+                                body.put("cell_tower_scan", cellString.toString());
+                            } else {
+                                throw new Exception();
+                            }
+                        } catch (Exception e) {
+                            body.put("cell_tower_scan", "No cellular data available");
                         }
-                        Log.d("Padmal", "Builder - > " + postString);
-                        body.put("cell_tower_scan", postString);
                         return body;
                     } catch (Exception e) {
                         return null;
@@ -632,9 +664,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     }
 
     @Override
-    public void onAccuracyChanged(Sensor sensor, int i) {
-
-    }
+    public void onAccuracyChanged(Sensor sensor, int i) {/**/}
 
     @Override
     public void stepMade(long timeNS) {

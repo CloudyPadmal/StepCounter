@@ -24,7 +24,7 @@ public class Logger {
         editor = preferences.edit();
     }
 
-    public HashMap<Integer, Integer> getCellIDs() {
+    public HashMap<String, String> getCellIDs() {
         return processIDs();
     }
 
@@ -43,14 +43,14 @@ public class Logger {
         return preferences.getString(CELL_IDS, null);
     }
 
-    private HashMap<Integer, Integer> processIDs() {
-        HashMap<Integer, Integer> map = new HashMap<>();
+    private HashMap<String, String> processIDs() {
+        HashMap<String, String> map = new HashMap<>();
         String IDList = preferences.getString(CELL_IDS, null);
         if (IDList != null) {
             String[] Cells = IDList.split(",");
 
             for (int i = 0; i < Cells.length; i = i + 2) {
-                map.put(Integer.parseInt(Cells[i]), Integer.parseInt(Cells[i + 1]));
+                map.put(Cells[i], Cells[i + 1]);
             }
         }
         return map;
