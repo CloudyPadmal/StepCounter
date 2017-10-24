@@ -8,7 +8,4 @@
     <string name="ox">Ox</string>
     <string name="oy">Oy</string>
 
-    <!-- AdMob ad unit IDs -->
-    <string name="banner_home_footer">ca-app-pub-9799098887169943/5752242256</string>
-
 </resources>

@@ -609,7 +609,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:padding="10dp">
+            android:padding="5dp">
 
             <TextView
                 android:id="@+id/start_time_stamp"
@@ -635,22 +635,11 @@
 
         </LinearLayout>
 
-        <EditText
-            android:id="@+id/tv_ip_address"
+        <Spinner
+            android:id="@+id/ip_address_spinner"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_margin="5dp"
-            android:text="202.94.70.33"
-            android:hint="IP Address" />
+            android:layout_height="wrap_content" />
 
-        <com.google.android.gms.ads.AdView
-            android:id="@+id/adView"
-            android:layout_width="320dp"
-            android:layout_height="50dp"
-            android:layout_gravity="center"
-            android:visibility="gone"
-            ads:adSize="BANNER"
-            ads:adUnitId="@string/banner_home_footer"></com.google.android.gms.ads.AdView>
     </LinearLayout>
 
 </ScrollView>

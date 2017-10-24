@@ -21,9 +21,12 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -96,9 +99,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     private TextView oriX, oriY, oriZ, accX, accY, accZ, gyrX, gyrY, gyrZ, magX, magY, magZ;
     private TextView wifiStat, imuStat, cellStat, mNodes, startTime, endTime;
-    private EditText ipAddress;
+    private Spinner ipAddresses;
 
-    private AdView mAdView;
+    private String IP = "202.94.70.33";
 
     private TelephonyManager tm;
 
@@ -122,14 +125,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         queue = Volley.newRequestQueue(this);
         retryPolicy = new DefaultRetryPolicy(10000, DefaultRetryPolicy.DEFAULT_MAX_RETRIES - 1, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT);
 
-        mAdView = (AdView) findViewById(R.id.adView);
-        AdRequest adRequest = new AdRequest.Builder()
-                .addTestDevice(AdRequest.DEVICE_ID_EMULATOR)
-                // Check the LogCat to get your test device ID
-                .addTestDevice("603FD1C49480363B600BC60138956EEE")
-                .build();
-        mAdView.loadAd(adRequest);
-
         compass = (ImageView) findViewById(R.id.compass);
 
         initiateViews();
@@ -140,12 +135,12 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         setupTimer();
     }
 
-    public String getUniqueID(){
+    public String getUniqueID() {
         String myAndroidDeviceId;
         tm = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
-        if (tm.getDeviceId() != null){
+        if (tm.getDeviceId() != null) {
             myAndroidDeviceId = tm.getDeviceId();
-        }else{
+        } else {
             myAndroidDeviceId = Settings.Secure.getString(getApplicationContext().getContentResolver(), Settings.Secure.ANDROID_ID);
         }
         return myAndroidDeviceId;
@@ -211,14 +206,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         runStop.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                String ip = ipAddress.getText().toString();
-                if (ip.equals("")) {
-                    ip = "202.94.70.33";
-                }
-                CELL_URL = "http://" + ip + "/tango/insert_tango_cell_tower_scan.php";
-                IMU_URL = "http://" + ip + "/tango/insert_tango_raw_imu.php";
-                WIFI_URL = "http://" + ip + "/tango/insert_tango_wifi_scan.php";
-                STEP_URL = "http://" + ip + "/server_testing/insertIRPSMobileHeadingPlusStepsWithTime.php";
+                CELL_URL = "http://" + IP + "/tango/insert_tango_cell_tower_scan.php";
+                IMU_URL = "http://" + IP + "/tango/insert_tango_raw_imu.php";
+                WIFI_URL = "http://" + IP + "/tango/insert_tango_wifi_scan.php";
+                STEP_URL = "http://" + IP + "/server_testing/insertIRPSMobileHeadingPlusStepsWithTime.php";
                 SimpleDateFormat sdf = new SimpleDateFormat("hh:mm:ss");
                 String now = sdf.format(new Date());
                 if (started) {
@@ -267,7 +258,26 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         stepStat = (TextView) findViewById(R.id.step_stat);
         cellStat = (TextView) findViewById(R.id.cell_stat);
 
-        ipAddress = (EditText) findViewById(R.id.tv_ip_address);
+        ipAddresses = (Spinner) findViewById(R.id.ip_address_spinner);
+        final List<String> ipAddressList = new ArrayList<>();
+        ipAddressList.add("192.168.1.5");
+        ipAddressList.add("202.94.70.33");
+
+        ArrayAdapter<String> ipAdapter = new ArrayAdapter<>(this, android.R.layout.simple_dropdown_item_1line, ipAddressList);
+        ipAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        ipAddresses.setAdapter(ipAdapter);
+
+        ipAddresses.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
+                IP = ipAddressList.get(i);
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> adapterView) {
+
+            }
+        });
     }
 
     /**
@@ -702,29 +712,5 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     public void decrease(View view) {
         StepDetector.STEP_THRESHOLD--;
         mThreshold.setText(String.valueOf((int) StepDetector.STEP_THRESHOLD));
-    }
-
-    @Override
-    public void onPause() {
-        if (mAdView != null) {
-            mAdView.pause();
-        }
-        super.onPause();
-    }
-
-    @Override
-    public void onResume() {
-        super.onResume();
-        if (mAdView != null) {
-            mAdView.resume();
-        }
-    }
-
-    @Override
-    public void onDestroy() {
-        if (mAdView != null) {
-            mAdView.destroy();
-        }
-        super.onDestroy();
     }
 }
